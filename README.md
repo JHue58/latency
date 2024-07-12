@@ -62,5 +62,5 @@ For more advanced examples, refer to [examples][examples].
 
 [duration.Duration]: duration/duration.go
 [buckets.bucketsRecorder]: buckets/buckets.go
-[recoder.RecordedSnapshot]: recorder/snapshot.go
+[recorder.RecordedSnapshot]: recorder/snapshot.go
 [examples]: examples
