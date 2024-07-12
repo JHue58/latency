@@ -55,4 +55,9 @@ fmt.Println("mean: ",mean.String())
 ```
 
 ## 进阶
-更多进阶示例可查看[examples](examples)
+更多进阶示例可查看[examples][examples]
+
+[duration.Duration]: duration/duration.go
+[buckets.bucketsRecorder]: buckets/buckets.go
+[recoder.RecordedSnapshot]: recorder/snapshot.go
+[examples]: examples

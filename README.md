@@ -10,7 +10,7 @@ This is a Goroutine-safe component for latency statistics, implemented using buc
 ## Features
 - [Duration][duration.Duration]: Extension of the official `time.Duration`, representing time with units, allowing easy conversion between different time units and optimizing for the best unit.
 - [Bucket][buckets.bucketsRecorder]: Bucket recorder offering various preset bucketing strategies such as automatic bucketing, fixed unit bucketing, and custom sequence bucketing.
-- [Snapshot][recoder.RecordedSnapshot]: Snapshot feature supporting retrieval of current statistical averages, maximums, minimums, and percentile values at any time.
+- [Snapshot][recorder.RecordedSnapshot]: Snapshot feature supporting retrieval of current statistical averages, maximums, minimums, and percentile values at any time.
 - High performance with optimizations for garbage collection (GC) and concurrency, minimizing performance overhead to the maximum extent.
 - Goroutine-safe.
 
@@ -57,4 +57,10 @@ fmt.Println("mean: ", mean.String())
 ```
 
 ## More
-For more advanced examples, refer to [examples](examples).
+For more advanced examples, refer to [examples][examples].
+
+
+[duration.Duration]: duration/duration.go
+[buckets.bucketsRecorder]: buckets/buckets.go
+[recoder.RecordedSnapshot]: recorder/snapshot.go
+[examples]: examples
