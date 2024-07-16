@@ -10,6 +10,7 @@ type FormatFunc func(sp recorder.RecordedSnapshot) string
 
 // DefaultFormat contains max,min,mean,p50,p90,p99,p999
 func DefaultFormat(sp recorder.RecordedSnapshot) string {
+	count := sp.Count()
 	mmax := sp.Max()
 	mmin := sp.Min()
 	mean := sp.Mean()
@@ -17,7 +18,8 @@ func DefaultFormat(sp recorder.RecordedSnapshot) string {
 	p90 := sp.Percentile(90)
 	p99 := sp.Percentile(99)
 	p999 := sp.Percentile(99.9)
-	str := fmt.Sprintf("max:%s min:%s mean:%s p50:%s p90:%s p99:%s p999:%s",
+	str := fmt.Sprintf("count:%d max:%s min:%s mean:%s p50:%s p90:%s p99:%s p999:%s",
+		count,
 		mmax.String(),
 		mmin.String(),
 		mean.String(),

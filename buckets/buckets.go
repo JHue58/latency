@@ -36,26 +36,3 @@ REDO:
 	}
 	val.v.Add(1)
 }
-
-// Snapshot gets the current bucket statistics snapshot.
-func (b *bucketsRecorder) Snapshot(sp recorder.RecordedSnapshot) {
-
-	if b.opt.clearAfterSnapshot {
-		var keys []duration.Duration
-		b.mp.IterCb(func(key duration.Duration, v counter) {
-			keys = append(keys, key)
-		})
-		for _, key := range keys {
-			v, ok := b.mp.Pop(key)
-			if ok {
-				sp[key] += v.v.Load()
-				v.recycle()
-			}
-		}
-	} else {
-		b.mp.IterCb(func(key duration.Duration, v counter) {
-			sp[key] += v.v.Load()
-		})
-	}
-
-}
