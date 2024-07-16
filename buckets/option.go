@@ -1,8 +1,8 @@
 package buckets
 
 type option struct {
-	allocator          BucketAllocator
-	clearAfterSnapshot bool
+	allocator    BucketAllocator
+	snapshotFunc SnapshotOperation
 }
 
 // Option bucket configuration.
@@ -16,14 +16,19 @@ func WithBucketAllocator(sf BucketAllocator) Option {
 	}
 }
 
-// WithClearAfterSnapshot set to clear the buckets after Snapshot.
-func WithClearAfterSnapshot() Option {
+// WithSnapshotOperation sets the SnapshotOperation (default is OnlySnapshot).
+// SnapshotOperation is provided by the buckets package.
+//
+//	Example:
+//
+// WithSnapshotOperation(CleanupAfterSnapshot(6))
+func WithSnapshotOperation(op SnapshotOperation) Option {
 	return func(o *option) {
-		o.clearAfterSnapshot = true
+		o.snapshotFunc = op
 	}
 }
 
 var defaultOption = option{
-	allocator:          BestBucketAllocator(),
-	clearAfterSnapshot: false,
+	allocator:    BestBucketAllocator(),
+	snapshotFunc: OnlySnapshot(),
 }

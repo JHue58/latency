@@ -75,6 +75,14 @@ func (s RecordedSnapshot) Percentile(percent float64) (res duration.Duration) {
 	return
 }
 
+// Count returns the count of the current snapshot.
+func (s RecordedSnapshot) Count() (count int64) {
+	for _, c := range s {
+		count += c
+	}
+	return
+}
+
 func (s RecordedSnapshot) IsEmpty() bool {
 	return len(s) <= 0
 }
