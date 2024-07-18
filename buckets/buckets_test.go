@@ -53,6 +53,16 @@ func BenchmarkSnapshot(b *testing.B) {
 			buckets.Snapshot(sp)
 		}
 	})
+	b.Run("SnapshotParallel", func(b *testing.B) {
+		b.RunParallel(func(pb *testing.PB) {
+			b.ResetTimer()
+			for pb.Next() {
+				sp := recorder.RecordedSnapshot{}
+				buckets.Snapshot(sp)
+			}
+
+		})
+	})
 
 }
 
