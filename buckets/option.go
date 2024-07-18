@@ -1,8 +1,8 @@
 package buckets
 
 type option struct {
-	allocator    BucketAllocator
-	snapshotFunc SnapshotOperation
+	allocator  BucketAllocator
+	snapshotOp SnapshotOperation
 }
 
 // Option bucket configuration.
@@ -24,11 +24,11 @@ func WithBucketAllocator(sf BucketAllocator) Option {
 // WithSnapshotOperation(CleanupAfterSnapshot(6))
 func WithSnapshotOperation(op SnapshotOperation) Option {
 	return func(o *option) {
-		o.snapshotFunc = op
+		o.snapshotOp = op
 	}
 }
 
 var defaultOption = option{
-	allocator:    BestBucketAllocator(),
-	snapshotFunc: OnlySnapshot(),
+	allocator:  BestBucketAllocator(),
+	snapshotOp: OnlySnapshot(),
 }
