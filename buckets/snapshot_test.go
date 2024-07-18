@@ -5,56 +5,56 @@ import (
 	"github.com/jhue58/latency/recorder"
 	"github.com/stretchr/testify/assert"
 	"math/rand/v2"
-	"sync"
 	"testing"
 	"time"
 )
 
-func TestCleanupAfterSnapshot(t *testing.T) {
-	wg := sync.WaitGroup{}
-	cleanupInterval := 10
-	b := NewBucketsRecorder(WithSnapshotOperation(CleanupAfterSnapshot(uint64(cleanupInterval))))
-
-	for i := 0; i < cleanupInterval*2; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			b.Record(duration.NewDuration(time.Duration(rand.Int64())))
-			sp := recorder.RecordedSnapshot{}
-			b.Snapshot(sp)
-			assert.False(t, sp.IsEmpty())
-		}()
+func recordData(count int, r recorder.Recorder) {
+	for i := 0; i < count; i++ {
+		r.Record(duration.NewDuration(time.Duration(rand.Int64())))
 	}
-	wg.Wait()
-	sp := recorder.RecordedSnapshot{}
-	b.Snapshot(sp)
-	assert.True(t, sp.IsEmpty())
 
 }
 
-func TestCleanupAndThenSwitch(t *testing.T) {
-	wg := sync.WaitGroup{}
-	cleanupInterval := 10
-	b := NewBucketsRecorder(WithSnapshotOperation(CleanupAndThenSwitch(uint64(cleanupInterval), OnlySnapshot())))
-
-	for i := 0; i < cleanupInterval*2; i++ {
-		if i == cleanupInterval {
-			wg.Wait()
-			sp := recorder.RecordedSnapshot{}
-			b.Snapshot(sp)
-			assert.True(t, sp.IsEmpty())
-		}
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			b.Record(duration.NewDuration(time.Duration(rand.Int64())))
-			sp := recorder.RecordedSnapshot{}
-			b.Snapshot(sp)
-			assert.False(t, sp.IsEmpty())
-		}()
-	}
-	wg.Wait()
+func isSnapshotEmpty(r recorder.Recorder) bool {
 	sp := recorder.RecordedSnapshot{}
-	b.Snapshot(sp)
-	assert.False(t, sp.IsEmpty())
+	r.Snapshot(sp)
+	return sp.IsEmpty()
+}
+
+func TestCleanupAfterSnapshot(t *testing.T) {
+	b := NewBucketsRecorder(WithSnapshotOperation(CleanupAfterSnapshot(2)))
+	test := func() {
+		recordData(10, b)
+		assert.False(t, isSnapshotEmpty(b)) // count = 1
+		assert.False(t, isSnapshotEmpty(b)) // count = 2 (cleanup)
+
+		assert.True(t, isSnapshotEmpty(b)) // count = 1, if not Reset(),in next test() count will equal 2
+	}
+	test()
+	b.Reset()
+	test()
+}
+
+func TestCleanupAndThenSwitch(t *testing.T) {
+
+	b := NewBucketsRecorder(WithSnapshotOperation(CleanupAndThenSwitch(1, CleanupAfterSnapshot(2))))
+	test := func() {
+		recordData(10, b)
+
+		assert.False(t, isSnapshotEmpty(b))
+		// switch
+
+		assert.True(t, isSnapshotEmpty(b)) // count = 1
+
+		recordData(10, b)
+		assert.False(t, isSnapshotEmpty(b)) // count = 2 (cleanup)
+		assert.True(t, isSnapshotEmpty(b))  // count = 1
+		recordData(10, b)
+		assert.False(t, isSnapshotEmpty(b)) // count = 2 (cleanup)
+	}
+	test()
+	b.Reset()
+	test()
+
 }

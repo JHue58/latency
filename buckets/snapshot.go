@@ -9,11 +9,17 @@ import (
 )
 
 // SnapshotOperation is a function that performs an operation get map snapshot.
-type SnapshotOperation func(mp cmap.ConcurrentMap[duration.Duration, counter], sp recorder.RecordedSnapshot)
+type SnapshotOperation struct {
+	do    snapshotOperation
+	reset func() snapshotOperation
+}
+type snapshotOperation func(mp cmap.ConcurrentMap[duration.Duration, counter], sp recorder.RecordedSnapshot)
 
 // Snapshot gets the current bucket statistics snapshot.
 func (b *bucketsRecorder) Snapshot(sp recorder.RecordedSnapshot) {
-	b.opt.snapshotFunc(b.mp, sp)
+	b.rsLock.RLock()
+	defer b.rsLock.RUnlock()
+	b.opt.snapshotOp.do(b.mp, sp)
 }
 
 // CleanupAfterSnapshot returns a SnapshotOperation that performs cleanup
@@ -24,7 +30,7 @@ func CleanupAfterSnapshot(cleanupInterval uint64) SnapshotOperation {
 	}
 	intervalI64 := int64(cleanupInterval)
 	var count atomic.Int64
-	return func(mp cmap.ConcurrentMap[duration.Duration, counter], sp recorder.RecordedSnapshot) {
+	do := func(mp cmap.ConcurrentMap[duration.Duration, counter], sp recorder.RecordedSnapshot) {
 	RETRY:
 		added := count.Add(1)
 		if added < intervalI64 {
@@ -47,8 +53,11 @@ func CleanupAfterSnapshot(cleanupInterval uint64) SnapshotOperation {
 		} else {
 			goto RETRY
 		}
-
 	}
+	reset := func() snapshotOperation {
+		return CleanupAfterSnapshot(cleanupInterval).do
+	}
+	return SnapshotOperation{do: do, reset: reset}
 }
 
 // CleanupAndThenSwitch returns a SnapshotOperation that performs cleanup
@@ -63,11 +72,11 @@ func CleanupAndThenSwitch(cleanupInterval uint64, to SnapshotOperation) Snapshot
 	var cleaned atomic.Bool
 	var cleanLock sync.RWMutex
 
-	return func(mp cmap.ConcurrentMap[duration.Duration, counter], sp recorder.RecordedSnapshot) {
+	do := func(mp cmap.ConcurrentMap[duration.Duration, counter], sp recorder.RecordedSnapshot) {
 	RETRY:
 		if cleaned.Load() {
 			cleanLock.RLock()
-			to(mp, sp)
+			to.do(mp, sp)
 			cleanLock.RUnlock()
 			return
 		}
@@ -96,14 +105,23 @@ func CleanupAndThenSwitch(cleanupInterval uint64, to SnapshotOperation) Snapshot
 		}
 
 	}
+	reset := func() snapshotOperation {
+		to.do = to.reset()
+		return CleanupAndThenSwitch(cleanupInterval, to).do
+	}
+	return SnapshotOperation{do: do, reset: reset}
 
 }
 
 // OnlySnapshot returns a SnapshotOperation.
 func OnlySnapshot() SnapshotOperation {
-	return func(mp cmap.ConcurrentMap[duration.Duration, counter], sp recorder.RecordedSnapshot) {
+	do := func(mp cmap.ConcurrentMap[duration.Duration, counter], sp recorder.RecordedSnapshot) {
 		mp.IterCb(func(key duration.Duration, v counter) {
 			sp[key] += v.v.Load()
 		})
 	}
+	reset := func() snapshotOperation {
+		return do
+	}
+	return SnapshotOperation{do: do, reset: reset}
 }
